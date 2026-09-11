@@ -1,0 +1,121 @@
+/ Programa de teste completo para analisador lexico (Etapa 1)
+// Cobre: palavras-chave, operadores, pontuacao, numeros, identificadores, comentarios, erros lexicos
+
+/* =========================
+   1) Palavras-chave
+   ========================= */
+int
+float
+if
+else
+while
+print
+read
+return
+
+/* =========================
+   2) Operadores relacionais
+   ========================= */
+>=
+<=
+!=
+<>
+==
+<
+>
+
+/* =========================
+   3) Operadores aritmeticos e atribuicao
+   ========================= */
++
+-
+*
+/
+%
+=
+
+/* =========================
+   4) Operadores logicos
+   ========================= */
+&&
+||
+!
+
+/* =========================
+   5) Pontuacao
+   ========================= */
+;
+,
+(
+)
+{
+}
+
+/* =========================
+   6) Numeros inteiros
+   ========================= */
+0
+42
+123456789
+007
+
+/* =========================
+   7) Numeros float
+   ========================= */
+3.14
+0.5
+2.5e3
+1.2E-10
+5e+2
+100.0e0
+
+/* =========================
+   8) Identificadores validos
+   ========================= */
+x
+contador
+var1
+Nome
+teste123
+a_b_c
+VARIAVEL
+
+/* =========================
+   9) Exemplo de programa simples
+   ========================= */
+int x = 42;
+float y = 3.14e-2;
+// comentario de linha unica
+/* comentario
+   de multiplas
+   linhas */
+x = x + 1;
+y = y * 2.0;
+if (x >= 10) {
+    print x;
+} else {
+    print y;
+}
+
+/* =========================
+   10) Erros lexicos intencionais
+   ========================= */
+@
+$
+#
+x = 5 ! 3;
+
+/* =========================
+   11) Espacos em branco e tabs
+   ========================= */
+int    a    =    10    ;
+float	b	=	20.5	;
+
+/* =========================
+   12) Combinacao final
+   ========================= */
+while (a != b && a < b) {
+    a = a + 1;
+    b = b - 1;
+}
+return a == b;
