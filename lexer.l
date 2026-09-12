@@ -36,7 +36,7 @@ float                   {digito}+(\.{digito}+{expoente}?|{expoente})
 id                      {letra}({letra}|{digito})*
 ws                      [ \t\r]+
 comentario_multilinha   "/*"([^*]|\*+[^*/])*\*+\/
-comentario_linhaunica   "//"([^\n])*
+comentario_linhaunica   "//".*
 
 %%  /* ------- Regras ------- */
 
@@ -114,11 +114,17 @@ int main(int argc, char **argv) {
     return 0;
 }
 
+/* O método atualizaColuna serve pra um caso muito específico mas que melhora a especificidade de sinalização do erro.
+ Basicamente ele vai percorrer até o final da palavra e, caso não seja uma quebra de linha ao final, ele vai incrementar normalmente.
 
-void atualizaColuna (void) {
-    int i;
+ Exemplo:
+ /* Teste 1
+ Teste 2 */ variavelqualquer
 
-    for (i = 0; i < yyleng; i++) {
+ Nesse caso, ele retornaria que o id do lexema "variavelqualquer" está na linha 122, coluna 12.
+*/
+void atualizaColuna(void) {
+    for (int i = 0; i < yyleng; i++) {
         if (yytext[i] == '\n') {
             column_number = 1;
         } else {

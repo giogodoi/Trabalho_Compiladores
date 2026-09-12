@@ -83,7 +83,7 @@ VARIAVEL
 /* =========================
    9) Exemplo de programa simples
    ========================= */
-int x = 42;
+int x = 42; teste1
 float y = 3.14e-2;
 // comentario de linha unica
 /* comentario
@@ -119,3 +119,10 @@ while (a != b && a < b) {
     b = b - 1;
 }
 return a == b;
+
+/* =========================
+   13) Teste do AtualizaColuna()
+   ========================= */
+   
+/* teste1
+teste2 */ oie
