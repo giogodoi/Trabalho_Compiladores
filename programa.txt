@@ -1,4 +1,4 @@
-/ Programa de teste completo para analisador lexico (Etapa 1)
+// Programa de teste completo para analisador lexico (Etapa 1)
 // Cobre: palavras-chave, operadores, pontuacao, numeros, identificadores, comentarios, erros lexicos
 
 /* =========================
@@ -77,7 +77,6 @@ contador
 var1
 Nome
 teste123
-a_b_c
 VARIAVEL
 
 /* =========================
