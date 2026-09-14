@@ -81,8 +81,8 @@ comentario_linhaunica   "//".*
 "{"                          { ImprimeToken("LBRACE", yytext); }
 "}"                          { ImprimeToken("RBRACE", yytext); }
 
-{float}                      { insereSimbolo(yytext, yylineno, column_number); ImprimeToken("NUM_FLOAT", yytext); }
-{inteiro}                    { insereSimbolo(yytext, yylineno, column_number); ImprimeToken("NUM_INT", yytext); }
+{float}                      { /*insereSimbolo(yytext, yylineno, column_number);*/ ImprimeToken("NUM_FLOAT", yytext); }
+{inteiro}                    { /*insereSimbolo(yytext, yylineno, column_number);*/ ImprimeToken("NUM_INT", yytext); }
 {id}                         { insereSimbolo(yytext, yylineno, column_number); ImprimeToken("ID", yytext); }
 
 .                            { fprintf(yyout, "Lexical error on line %d and column %d. Input -> \"%s\"\n", yylineno, column_number, yytext); column_number += yyleng; }
