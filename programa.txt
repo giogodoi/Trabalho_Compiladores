@@ -127,3 +127,9 @@ return a == b;
    
 /* teste1
 teste2 */ oie
+
+/* =========================
+   13) Teste de Especificidade 
+   ========================= */
+
+123yz45

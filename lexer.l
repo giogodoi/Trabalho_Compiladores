@@ -74,8 +74,9 @@ comentario_linhaunica   "//".*
 "{"                          { ImprimeToken("LBRACE", yytext); }
 "}"                          { ImprimeToken("RBRACE", yytext); }
 
-{float}                      { /*insereSimbolo(yytext, yylineno, column_number);*/ ImprimeToken("NUM_FLOAT", yytext); }
-{inteiro}                    { /*insereSimbolo(yytext, yylineno, column_number);*/ ImprimeToken("NUM_INT", yytext); }
+{float}                      { ImprimeToken("NUM_FLOAT", yytext); }
+{inteiro}                    { ImprimeToken("NUM_INT", yytext); }
+{digito}+{letra}+{digito}*    { fprintf (yyout, "Lexical error on line %d and column %d. Input -> \"%s\"\n Não é permitido iniciar um identificador com dígito.", yylineno, column_number, yytext); column_number += yyleng; }
 {id}                         { insereSimbolo(yytext, yylineno, column_number); ImprimeToken("ID", yytext); }
 
 .                            { fprintf(yyout, "Lexical error on line %d and column %d. Input -> \"%s\"\n", yylineno, column_number, yytext); column_number += yyleng; }
