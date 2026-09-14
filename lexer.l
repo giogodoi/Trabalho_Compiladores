@@ -33,7 +33,7 @@ sinal                   [+-]?
 expoente                [Ee]{sinal}{digito}+
 inteiro                 {digito}+
 float                   {digito}+(\.{digito}+{expoente}?|{expoente})
-id                      {letra}({letra}|{digito})*
+id                      {letra}({letra}|{digito}|_)*
 ws                      [ \t\r]+
 comentario_multilinha   "/*"([^*]|\*+[^*/])*\*+\/
 comentario_linhaunica   "//".*

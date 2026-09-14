@@ -66,6 +66,7 @@ return
 0.5
 2.5e3
 1.2E-10
+1.E-2
 5e+2
 100.0e0
 
@@ -77,6 +78,7 @@ contador
 var1
 Nome
 teste123
+a_b_c
 VARIAVEL
 
 /* =========================
