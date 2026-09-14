@@ -46,8 +46,7 @@ comentario_linhaunica   "//".*
 \n                       { column_number = 1; }
 {ws}                     { column_number += yyleng; }
 
-"int"                        { ImprimeToken("INT", yytext); }
-"float"                      { ImprimeToken("FLOAT", yytext); }
+"int"|"float"                { ImprimeToken("TYPE", yytext); }
 "if"                         { ImprimeToken("IF", yytext); }
 "else"                       { ImprimeToken("ELSE", yytext); }
 "while"                      { ImprimeToken("WHILE", yytext); }
@@ -55,13 +54,7 @@ comentario_linhaunica   "//".*
 "read"                       { ImprimeToken("READ", yytext); }
 "return"                     { ImprimeToken("RETURN", yytext); }
 
-">="                         { ImprimeToken("GE", yytext); }
-"<="                         { ImprimeToken("LE", yytext); }
-"!="                         { ImprimeToken("NE", yytext); }
-"<>"                         { ImprimeToken("NE", yytext); }
-"=="                         { ImprimeToken("EQ", yytext); }
-"<"                          { ImprimeToken("LT", yytext); }
-">"                          { ImprimeToken("GT", yytext); }
+">"|"<"|"!="|"<>"|"=="|"<="|">="  { ImprimeToken("RELOP", yytext); }
 
 "+"                          { ImprimeToken("PLUS", yytext); }
 "-"                          { ImprimeToken("MINUS", yytext); }
