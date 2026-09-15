@@ -76,8 +76,14 @@ comentario_linhaunica   "//".*
 
 {float}                      { ImprimeToken("NUM_FLOAT", yytext); }
 {inteiro}                    { ImprimeToken("NUM_INT", yytext); }
-{digito}+{letra}+{digito}*    { fprintf (yyout, "Lexical error on line %d and column %d. Input -> \"%s\"\n Não é permitido iniciar um identificador com dígito.", yylineno, column_number, yytext); column_number += yyleng; }
+
+    /* Tratativas de erros com especificidade */
+
+"/*"                        { fprintf (yyout, "Lexical error on line %d and column %d. Input -> \"%s\"\n Comentário não fechado.", yylineno, column_number, yytext); column_number += yyleng; }
+{digito}+{letra}+{digito}*   { fprintf (yyout, "Lexical error on line %d and column %d. Input -> \"%s\"\n Não é permitido iniciar um identificador com dígito.", yylineno, column_number, yytext); column_number += yyleng; }
 {id}                         { insereSimbolo(yytext, yylineno, column_number); ImprimeToken("ID", yytext); }
+
+    /* Tratativas de erro genérico */
 
 .                            { fprintf(yyout, "Lexical error on line %d and column %d. Input -> \"%s\"\n", yylineno, column_number, yytext); column_number += yyleng; }
 
