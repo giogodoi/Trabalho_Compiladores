@@ -1,0 +1,8 @@
+/* Teste Lexico */
+int a = 10;
+float b = 2.5E+1;
+while( a > 0){
+    print(b);
+}
+if(a == b);
+return 0;
