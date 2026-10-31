@@ -36,6 +36,7 @@ float                   {digito}+(\.{digito}+{expoente}?|{expoente})
 id                      {letra}({letra}|{digito}|_)*
 ws                      [ \t\r]+
 comentario_multilinha   "/*"([^*]|\*+[^*/])*\*+\/
+comentario_nao_fechado  "/*"([^*]|\*+[^*/])*\**
 comentario_linhaunica   "//".*
 
 %%  /* ------- Regras ------- */
@@ -79,7 +80,18 @@ comentario_linhaunica   "//".*
 
     /* Tratativas de erros com especificidade */
 
-"/*"                        { fprintf (yyout, "Lexical error on line %d and column %d. Input -> \"%s\"\n Comentário não fechado.", yylineno, column_number, yytext); column_number += yyleng; }
+    /* Comentario aberto e nunca fechado: o padrao nao aceita "*" seguido de "/", entao consome
+     * todo o restante do arquivo ate o EOF (se houver fechamento, comentario_multilinha casa
+     * um caractere a mais e vence). Assim o conteudo interno nao vira tokens. Como o yylineno
+     * ja foi avancado pelas quebras de linha consumidas, descontamos para reportar a linha de inicio. */
+{comentario_nao_fechado}     { int linha_inicio = yylineno;
+                               for (int i = 0; i < yyleng; i++) {
+                                   if (yytext[i] == '\n') {
+                                       linha_inicio--;
+                                   }
+                               }
+                               fprintf(yyout, "Lexical error on line %d and column %d. Input -> \"/*\"\n Comentário não fechado: o restante do arquivo foi descartado.\n", linha_inicio, column_number);
+                               atualizaColuna(); }
 {digito}+{letra}+{digito}*   { fprintf (yyout, "Lexical error on line %d and column %d. Input -> \"%s\"\n Não é permitido iniciar um identificador com dígito.", yylineno, column_number, yytext); column_number += yyleng; }
 {id}                         { insereSimbolo(yytext, yylineno, column_number); ImprimeToken("ID", yytext); }
 

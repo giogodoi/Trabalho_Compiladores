@@ -29,6 +29,7 @@ Esta etapa consiste no desenvolvimento do Analisador Léxico utilizando a ferram
 ### 4. Tratamento de Erros Léxicos
 - Qualquer caractere não reconhecido pelas regras anteriores é capturado pelo padrão genérico `.`.
 - O erro é exibido imediatamente no `yyout`/`stdout` informando o caractere inválido e sua posição exata (linha e coluna), permitindo que a análise prssiga para os próximos tokens.
+- **Comentário não fechado (`/*` sem `*/`):** o padrão `comentario_nao_fechado` consome todo o restante do arquivo até o EOF, reportando o erro na linha e coluna onde o comentário foi aberto. Assim, o conteúdo do comentário não é convertido em tokens.
 
 ### 5. Suporte a Números Negativos
 - A linguagem trata o sinal negativo (`-`) como o operador aritmético unário/binário (`MINUS`). O agrupamento do sinal com o número para formar um valor negativo é delegado para a etapa de **Análise Sintática/Semântica**, garantindo maior flexibilidade gramatical.
