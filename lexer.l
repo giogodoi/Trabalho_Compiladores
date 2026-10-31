@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "parser.tab.h"   /* Tokens declarados no parser.y (gerado por bison -d) */
 #define MAX_SYMBOLS 1000
 
 typedef struct {
@@ -18,6 +19,7 @@ int token_line = 1;
 int token_column = 1;
 Simbolo symbol_table[MAX_SYMBOLS];
 int symbol_count = 0;
+int erros_lexicos = 0;
 
 void atualizaColuna(void);
 int procuraSimbolo(const char *lexema);
@@ -47,38 +49,42 @@ comentario_linhaunica   "//".*
 \n                       { column_number = 1; }
 {ws}                     { column_number += yyleng; }
 
-"int"|"float"                { ImprimeToken("TYPE", yytext); }
-"if"                         { ImprimeToken("IF", yytext); }
-"else"                       { ImprimeToken("ELSE", yytext); }
-"while"                      { ImprimeToken("WHILE", yytext); }
-"print"                      { ImprimeToken("PRINT", yytext); }
-"read"                       { ImprimeToken("READ", yytext); }
-"return"                     { ImprimeToken("RETURN", yytext); }
+    /* Cada regra de token imprime o token e o retorna ao parser (Bison) */
 
-">"|"<"|"!="|"<>"|"=="|"<="|">="  { ImprimeToken("RELOP", yytext); }
+"int"|"float"                { ImprimeToken("TYPE", yytext); return TYPE; }
+"if"                         { ImprimeToken("IF", yytext); return IF; }
+"else"                       { ImprimeToken("ELSE", yytext); return ELSE; }
+"while"                      { ImprimeToken("WHILE", yytext); return WHILE; }
+"print"                      { ImprimeToken("PRINT", yytext); return PRINT; }
+"read"                       { ImprimeToken("READ", yytext); return READ; }
+"return"                     { ImprimeToken("RETURN", yytext); return RETURN; }
 
-"+"                          { ImprimeToken("PLUS", yytext); }
-"-"                          { ImprimeToken("MINUS", yytext); }
-"*"                          { ImprimeToken("MULT", yytext); }
-"/"                          { ImprimeToken("DIV", yytext); }
-"%"                          { ImprimeToken("MOD", yytext); }
-"="                          { ImprimeToken("ASSIGN", yytext); }
+    /* Igualdade separada dos relacionais para ter precedencia menor no parser (como em C) */
+"=="|"!="|"<>"               { ImprimeToken("EQOP", yytext); return EQOP; }
+">"|"<"|"<="|">="            { ImprimeToken("RELOP", yytext); return RELOP; }
 
-"&&"                         { ImprimeToken("AND", yytext); }
-"||"                         { ImprimeToken("OR", yytext); }
-"!"                          { ImprimeToken("NOT", yytext); }
+"+"                          { ImprimeToken("PLUS", yytext); return PLUS; }
+"-"                          { ImprimeToken("MINUS", yytext); return MINUS; }
+"*"                          { ImprimeToken("MULT", yytext); return MULT; }
+"/"                          { ImprimeToken("DIV", yytext); return DIV; }
+"%"                          { ImprimeToken("MOD", yytext); return MOD; }
+"="                          { ImprimeToken("ASSIGN", yytext); return ASSIGN; }
 
-";"                          { ImprimeToken("SEMI", yytext); }
-","                          { ImprimeToken("COMMA", yytext); }
-"("                          { ImprimeToken("LPAREN", yytext); }
-")"                          { ImprimeToken("RPAREN", yytext); }
-"{"                          { ImprimeToken("LBRACE", yytext); }
-"}"                          { ImprimeToken("RBRACE", yytext); }
+"&&"                         { ImprimeToken("AND", yytext); return AND; }
+"||"                         { ImprimeToken("OR", yytext); return OR; }
+"!"                          { ImprimeToken("NOT", yytext); return NOT; }
 
-{float}                      { ImprimeToken("NUM_FLOAT", yytext); }
-{inteiro}                    { ImprimeToken("NUM_INT", yytext); }
+";"                          { ImprimeToken("SEMI", yytext); return SEMI; }
+","                          { ImprimeToken("COMMA", yytext); return COMMA; }
+"("                          { ImprimeToken("LPAREN", yytext); return LPAREN; }
+")"                          { ImprimeToken("RPAREN", yytext); return RPAREN; }
+"{"                          { ImprimeToken("LBRACE", yytext); return LBRACE; }
+"}"                          { ImprimeToken("RBRACE", yytext); return RBRACE; }
 
-    /* Tratativas de erros com especificidade */
+{float}                      { ImprimeToken("NUM_FLOAT", yytext); return NUM_FLOAT; }
+{inteiro}                    { ImprimeToken("NUM_INT", yytext); return NUM_INT; }
+
+    /* Tratativas de erros com especificidade (erros lexicos nao retornam token ao parser) */
 
     /* Comentario aberto e nunca fechado: o padrao nao aceita "*" seguido de "/", entao consome
      * todo o restante do arquivo ate o EOF (se houver fechamento, comentario_multilinha casa
@@ -91,40 +97,21 @@ comentario_linhaunica   "//".*
                                    }
                                }
                                fprintf(yyout, "Lexical error on line %d and column %d. Input -> \"/*\"\n Comentário não fechado: o restante do arquivo foi descartado.\n", linha_inicio, column_number);
+                               erros_lexicos++;
                                atualizaColuna(); }
-{digito}+{letra}+{digito}*   { fprintf (yyout, "Lexical error on line %d and column %d. Input -> \"%s\"\n Não é permitido iniciar um identificador com dígito.", yylineno, column_number, yytext); column_number += yyleng; }
-{id}                         { insereSimbolo(yytext, yylineno, column_number); ImprimeToken("ID", yytext); }
+{digito}+{letra}+{digito}*   { fprintf (yyout, "Lexical error on line %d and column %d. Input -> \"%s\"\n Não é permitido iniciar um identificador com dígito.\n", yylineno, column_number, yytext); erros_lexicos++; column_number += yyleng; }
+{id}                         { insereSimbolo(yytext, yylineno, column_number); ImprimeToken("ID", yytext); return ID; }
 
     /* Tratativas de erro genérico */
 
-.                            { fprintf(yyout, "Lexical error on line %d and column %d. Input -> \"%s\"\n", yylineno, column_number, yytext); column_number += yyleng; }
+.                            { fprintf(yyout, "Lexical error on line %d and column %d. Input -> \"%s\"\n", yylineno, column_number, yytext); erros_lexicos++; column_number += yyleng; }
 
 
 
 %%
 /*------------------------- User subrotines -------------------------*/
 
-/* main customizado que abre o arquivo passado como argv[1].
- * Uso: ./main programa.txt
- */
-int main(int argc, char **argv) {
-    if (argc != 2) {
-        fprintf(stderr, "Uso: %s <arquivo-fonte>\n", argv[0]);
-        return 1;
-    }
-
-    FILE *input = fopen(argv[1], "r");
-    if (!input) {
-        fprintf(stderr, "ERRO: nao foi possivel abrir o arquivo '%s'\n", argv[1]);
-        return 1;
-    }
-
-    yyin = input;
-    yylex();
-    imprimeTabeladeSimbolos();
-    fclose(input);
-    return 0;
-}
+/* O main foi movido para o parser.y (Etapa 2), que chama yyparse(). */
 
 void atualizaColuna(void) {
     for (int i = 0; i < yyleng; i++) {

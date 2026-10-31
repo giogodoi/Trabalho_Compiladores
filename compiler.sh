@@ -7,8 +7,9 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
-# Etapa 1: apenas analisador lexico (Flex), sem Bison
-flex -o lexer.c lexer.l
-gcc -o main lexer.c -lfl
+# Etapa 2: analisador sintatico (Bison) integrado ao analisador lexico (Flex)
+bison -d -o parser.tab.c parser.y   # gera parser.tab.c e parser.tab.h (tokens)
+flex -o lexer.c lexer.l             # lexer.l inclui o parser.tab.h
+gcc -o main parser.tab.c lexer.c    # sem -lfl/-ly: noyywrap e main/yyerror proprios
 
 ./main "$1"
