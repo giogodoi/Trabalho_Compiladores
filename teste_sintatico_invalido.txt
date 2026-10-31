@@ -1,0 +1,11 @@
+// Teste de erros sintaticos e recuperacao (modo panico ate ";" ou "}")
+
+int a b = 5;          // Erro 1: falta "," entre a e b
+read(a + 1);          // Erro 2: read aceita apenas um identificador
+if (a > ) print(a);   // Erro 3: expressao incompleta
+a = (a + 2));         // Erro 4: ")" sobrando
+else a = 1;           // Erro 5: else sem if
+print(a);             // comando valido: a analise continua apos a recuperacao
+while (a > 0) {
+    a = a - 1;
+// Erro 6: "}" faltando no fim do arquivo

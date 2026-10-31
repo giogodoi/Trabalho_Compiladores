@@ -1,10 +1,43 @@
-/* Teste Lexico */
-int a = 10;
-float b = 2.5E+1;
-while( a > 0){
-    print(b);
-}
-if(a == b);
-return 0;
+/* Programa de teste da Etapa 2 (analisador sintatico)
+   Cobre: declaracoes, atribuicao, if/else, while, blocos,
+   print/read, return e expressoes com precedencia */
 
-/*
+// Declaracoes: lista de variaveis e inicializacao
+int a = 10, b, c;
+float x = 2.5E+1, y = 0.5;
+
+read(b);
+c = -a + b * 2 - (a - b) % 3;      // menos unario e precedencia aritmetica
+y = x / 2.0 - -1.5e-2;
+
+// Precedencia: || < && < (== !=) < (< > <= >=) < (+ -) < (* / %) < (! -unario)
+if (a == b < c + 1 && !(a > 0) || c != 0)
+    print(a);
+else
+    print(b);
+
+// Dangling else: o else pertence ao if mais interno
+if (a > 0)
+    if (b > 0)
+        print(a + b);
+    else
+        print(a - b);
+
+// while com bloco, declaracao interna e if sem else
+while (a >= 0 && b <> 0) {
+    int i = 0;
+    a = a - 1;
+    if (a % 2 == 0) {
+        print(a);
+    }
+}
+
+// while cujo corpo e um if sem else (comando aberto)
+while (b > 0) if (b <= 5) b = b - 1;
+
+{ float z = x * y; print(z); }     // bloco isolado
+;                                  // comando vazio
+return a;
+
+/* comentario nao fechado no fim do arquivo: o restante e descartado
+print(a);

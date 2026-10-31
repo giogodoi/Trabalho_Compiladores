@@ -1,0 +1,160 @@
+\documentclass[sigconf,nonacm]{acmart}
+
+\usepackage[brazil]{babel}
+\settopmatter{printfolios=false}
+
+\begin{document}
+
+\title{Relatório do Analisador Sintático (Etapa 2) -- GCC130}
+
+\author{Giovane Felipe Godoi Oliveira \& Luiz Fellipe Resende Lima}
+\affiliation{%
+  \institution{Universidade Federal de Lavras (UFLA)}
+  \department{Departamento de Ciência da Computação}
+  \city{Lavras}
+  \state{MG}
+  \country{Brasil}}
+
+\begin{abstract}
+Este relatório apresenta o analisador sintático construído com o Bison e integrado ao
+analisador léxico em Flex da Etapa 1. São discutidas a correção solicitada na etapa
+anterior, as decisões de projeto (incluindo a resolução de ambiguidades e o tratamento
+de erros), os resultados da análise da gramática e as dificuldades encontradas. A
+gramática completa em BNF está no Apêndice~\ref{sec:bnf}.
+\end{abstract}
+
+\maketitle
+
+\section{Correção da Etapa 1}
+O \texttt{/*} sem \texttt{*/} apenas emitia o erro, e o conteúdo do comentário
+continuava virando \emph{tokens}. Foi criado o padrão
+\verb!"/*"([^*]|\*+[^*/])*\**!, que não aceita \texttt{*/} e, portanto, consome
+o restante do arquivo até o EOF; se houver fechamento, o padrão do comentário
+multilinha casa um caractere a mais e vence. O erro é reportado na linha e coluna de
+abertura (o \texttt{yylineno} é descontado das quebras de linha consumidas).
+
+\section{Integração Flex/Bison}
+O \texttt{parser.y} declara os \emph{tokens} com \texttt{\%token}; o \texttt{bison -d}
+gera o \texttt{parser.tab.h}, incluído no \texttt{lexer.l}, e cada regra de \emph{token}
+passa a fazer \texttt{return}. Espaços, comentários e erros léxicos não retornam nada,
+logo o parser nunca recebe um \emph{token} inválido. O \texttt{main} foi movido para o
+\texttt{parser.y} e chama \texttt{yyparse()}. Única mudança no léxico: o antigo
+\texttt{RELOP} foi dividido em \texttt{EQOP} (\texttt{== != <>}) e \texttt{RELOP}
+(\texttt{< > <= >=}), para que a igualdade tenha precedência menor, como em C. O
+\texttt{compiler.sh} executa \texttt{bison}, \texttt{flex} e \texttt{gcc} e roda o programa.
+
+\section{Decisões de Projeto}\label{sec:decisoes}
+\textbf{Estrutura.} Um programa é uma sequência de comandos: declaração
+(\texttt{int a, b = 10;}), atribuição, \texttt{if}/\texttt{else}, \texttt{while}, bloco
+\texttt{\{ \}}, \texttt{print(expr);}, \texttt{read(id);}, \texttt{return expr;} e comando
+vazio (\texttt{;}). Declarações são comandos e podem aparecer dentro de blocos, o que
+prepara os escopos aninhados da Etapa 3.
+
+\textbf{Dangling else.} Resolvido na própria gramática (Aula 7), sem \texttt{\%prec}: os
+comandos são divididos em \emph{casados} (todo \texttt{if} possui \texttt{else}) e
+\emph{abertos}. Assim, o \texttt{else} sempre se associa ao \texttt{if} mais próximo. O
+\texttt{while} foi dividido da mesma forma, pois também termina com um comando.
+
+\textbf{Precedência e o ``-''.} A ambiguidade das expressões é resolvida por
+\texttt{\%left}/\texttt{\%right} (da menor para a maior):
+
+\begin{center}\small
+\begin{tabular}{cl}
+\hline
+1 & \texttt{||} \\
+2 & \texttt{\&\&} \\
+3 & \texttt{== != <>} \\
+4 & \texttt{< > <= >=} \\
+5 & \texttt{+ -} (binários) \\
+6 & \texttt{* / \%} \\
+7 & \texttt{!} (à direita) \\
+8 & \texttt{-} unário (\texttt{\%prec UMINUS}) \\
+\hline
+\end{tabular}
+\end{center}
+
+Como decidido na Etapa 1, o léxico gera números sempre sem sinal; o parser trata o
+\texttt{-} como binário (por precedência) ou unário (\texttt{MINUS expr \%prec UMINUS}).
+Assim, \texttt{x-1} é uma subtração e \texttt{-a + b} é \texttt{(-a) + b}.
+
+\textbf{Tratamento de erros.} O \texttt{yyerror} informa a linha e a coluna do
+\emph{token} em que o erro foi detectado (ou ``fim de arquivo inesperado''). A
+recuperação usa o modo pânico: \texttt{lista\_comandos error ';' \{ yyerrok; \}} e
+\texttt{lista\_comandos error '\}'} descartam \emph{tokens} até um \texttt{;} ou
+\texttt{\}} e a análise prossegue, reportando vários erros em uma execução. Ao final
+são exibidos a tabela de símbolos e o total de erros léxicos e sintáticos.
+
+\section{Resultados da Análise da Gramática}
+A gramática possui 46 produções e gerou um autômato LALR(1) com 90 estados e
+\textbf{nenhum conflito} reportado pelo Bison. Os 99 conflitos \emph{shift/reduce}
+inerentes às expressões ambíguas foram todos resolvidos pelas declarações de
+precedência (67 como \emph{reduce} e 32 como \emph{shift}); o \emph{dangling else} não
+gera conflito algum. O \texttt{programa.txt} (toda a gramática) é aceito sem erros
+sintáticos, e o \texttt{teste\_sintatico\_invalido.txt} reporta os seis erros
+inseridos, por exemplo:
+
+\begin{small}
+\begin{verbatim}
+syntax error on line 3 and column 7. Input -> "b"
+syntax error on line 5 and column 9. Input -> ")"
+syntax error on line 7 and column 1. Input -> "else"
+syntax error on line 12 and column 1. Fim de
+arquivo inesperado.
+\end{verbatim}
+\end{small}
+
+\section{Dificuldades Encontradas}
+(i) Eliminar o \emph{dangling else} sem conflitos exigiu reestruturar todos os comandos
+em casados/abertos, inclusive o \texttt{while}. (ii) A coluna do erro: o lexer já soma
+o tamanho do lexema antes do \texttt{return}, então a posição do \emph{token} passou a
+ser guardada antes desse avanço. (iii) Na recuperação, a regra \texttt{error '\}'} pode
+consumir o \texttt{\}} de um bloco (ex.: \texttt{\{ a = 1 \}}), gerando um erro em
+cascata no fim do arquivo.
+
+\appendix
+\section{Gramática Completa em BNF}\label{sec:bnf}
+\begin{small}
+\begin{verbatim}
+<programa>   ::= <lista_cmd>
+<lista_cmd>  ::= <lista_cmd> <comando> | (vazio)
+               | <lista_cmd> error ";"
+               | <lista_cmd> error "}"
+<comando>    ::= <casado> | <aberto>
+<casado>     ::= "if" "(" <expr> ")" <casado>
+                   "else" <casado>
+               | "while" "(" <expr> ")" <casado>
+               | <simples>
+<aberto>     ::= "if" "(" <expr> ")" <comando>
+               | "if" "(" <expr> ")" <casado>
+                   "else" <aberto>
+               | "while" "(" <expr> ")" <aberto>
+<simples>    ::= <decl> | <atrib> | <bloco> | <print>
+               | <read> | <return> | ";"
+<decl>       ::= <tipo> <lista_decl> ";"
+<tipo>       ::= "int" | "float"
+<lista_decl> ::= <item_decl>
+               | <lista_decl> "," <item_decl>
+<item_decl>  ::= ID | ID "=" <expr>
+<atrib>      ::= ID "=" <expr> ";"
+<bloco>      ::= "{" <lista_cmd> "}"
+<print>      ::= "print" "(" <expr> ")" ";"
+<read>       ::= "read" "(" ID ")" ";"
+<return>     ::= "return" <expr> ";"
+<expr>       ::= <expr> "||" <expr>
+               | <expr> "&&" <expr>
+               | <expr> <op_ig> <expr>
+               | <expr> <op_rel> <expr>
+               | <expr> "+" <expr> | <expr> "-" <expr>
+               | <expr> "*" <expr> | <expr> "/" <expr>
+               | <expr> "%" <expr>
+               | "!" <expr> | "-" <expr>
+               | "(" <expr> ")"
+               | ID | NUM_INT | NUM_FLOAT
+<op_ig>      ::= "==" | "!=" | "<>"
+<op_rel>     ::= "<" | ">" | "<=" | ">="
+\end{verbatim}
+\end{small}
+\noindent\texttt{ID}, \texttt{NUM\_INT} e \texttt{NUM\_FLOAT} são definidos no léxico
+(Etapa 1). A precedência dos operadores segue a tabela da Seção~\ref{sec:decisoes}.
+
+\end{document}

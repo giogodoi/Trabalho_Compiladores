@@ -1,4 +1,4 @@
-# Etapa 1: Analisador Léxico (Flex)
+# Etapas 1 e 2: Analisador Léxico (Flex) e Analisador Sintático (Bison)
 
 *Alunos:*
 *Giovane Felipe Godoi Oliveira & Luiz Fellipe Resende Lima*
@@ -40,14 +40,46 @@ Esta etapa consiste no desenvolvimento do Analisador Léxico utilizando a ferram
 
 | Categoria | Tokens / Expressões |
 | :--- | :--- |
-| **Tipos de Dados** | `int` (`INT`), `float` (`FLOAT`) |
+| **Tipos de Dados** | `int`, `float` (`TYPE`) |
 | **Palavras-chave** | `if`, `else`, `while`, `print`, `read`, `return` |
-| **Operadores Relacionais** | `>=` (`GE`), `<=` (`LE`), `!=` / `<>` (`NE`), `==` (`EQ`), `<` (`LT`), `>` (`GT`) |
+| **Operadores de Igualdade** | `==`, `!=`, `<>` (`EQOP`) |
+| **Operadores Relacionais** | `<`, `>`, `<=`, `>=` (`RELOP`) |
 | **Operadores Aritméticos** | `+` (`PLUS`), `-` (`MINUS`), `*` (`MULT`), `/` (`DIV`), `%` (`MOD`), `=` (`ASSIGN`) |
 | **Operadores Lógicos** | `&&` (`AND`), `\|\|` (`OR`), `!` (`NOT`) |
 | **Pontuação / Delimitadores** | `;` (`SEMI`), `,` (`COMMA`), `(` (`LPAREN`), `)` (`RPAREN`), `{` (`LBRACE`), `}` (`RBRACE`) |
-| **Identificadores (`ID`)** | Começam com letra seguidos de letras ou dígitos: `[a-zA-Z][a-zA-Z0-9]*` |
+| **Identificadores (`ID`)** | Começam com letra seguida de letras, dígitos ou underscore: `[a-zA-Z][a-zA-Z0-9_]*` |
 | **Numéricos (`NUM_INT`, `NUM_FLOAT`)** | Suporta inteiros (`10`) e floats com notação científica opcional (`2.5E+1`, `0.5e-2`) |
+
+---
+
+## Etapa 2: Analisador Sintático (Bison)
+
+### Integração com o Flex
+- O `parser.y` declara os tokens (`%token`); o `bison -d` gera o `parser.tab.h`, incluído pelo `lexer.l`.
+- Cada regra de token do lexer faz `return TOKEN`; espaços, comentários e erros léxicos não retornam nada ao parser.
+- O `main` foi movido para o `parser.y` e chama `yyparse()`; ao final são impressas a tabela de símbolos e a quantidade de erros léxicos e sintáticos.
+
+### Gramática
+- **Comandos:** declaração (`int a, b = 10;`), atribuição (`a = expr;`), `if`/`else`, `while`, blocos `{ }`, `print(expr);`, `read(id);`, `return expr;` e comando vazio (`;`). Declarações são comandos, podendo aparecer dentro de blocos.
+- **Dangling else:** resolvido na própria gramática, dividindo os comandos em *casados* (todo `if` tem `else`) e *abertos* (Aula 7). O `else` sempre pertence ao `if` mais próximo e o Bison não reporta conflitos. O `while` foi dividido da mesma forma, pois também termina com um comando.
+- **Precedência e associatividade** (da menor para a maior, todas à esquerda, exceto os unários):
+
+  | Nível | Operadores |
+  | :--- | :--- |
+  | 1 | `\|\|` |
+  | 2 | `&&` |
+  | 3 | `==` `!=` `<>` |
+  | 4 | `<` `>` `<=` `>=` |
+  | 5 | `+` `-` |
+  | 6 | `*` `/` `%` |
+  | 7 | `!` |
+  | 8 | `-` unário (`%prec UMINUS`) |
+
+- **Números negativos:** o lexer sempre gera números sem sinal; o `-` é resolvido no parser como binário (por precedência) ou unário (`MINUS expr %prec UMINUS`).
+
+### Erros Sintáticos
+- `yyerror` informa a linha e a coluna do token onde o erro foi detectado (ou o fim de arquivo inesperado).
+- Recuperação em modo pânico: as regras `lista_comandos error SEMI { yyerrok; }` e `lista_comandos error RBRACE` descartam tokens até um `;` ou `}` e a análise continua, permitindo reportar vários erros em uma única execução.
 
 ---
 
@@ -55,9 +87,16 @@ Esta etapa consiste no desenvolvimento do Analisador Léxico utilizando a ferram
 
 ### Pré-requisitos
 - `flex`
+- `bison`
 - `gcc`
 
 ### Passos
 1. **Utilize o script junto ao arquivo que deseja testar:**
    ```bash
    ./compiler.sh <arquivo-fonte>
+   ```
+
+### Arquivos de Teste
+- `programa.txt`: programa válido cobrindo toda a gramática (termina com um comentário não fechado, testando a correção da Etapa 1).
+- `teste_sintatico_invalido.txt`: erros sintáticos e recuperação.
+- `teste_completo.txt`: teste léxico da Etapa 1.
